@@ -506,7 +506,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
         
         sel_cv = as.data.frame(t(sapply(1:nrow(genemuts), selfun_cv)))
         colnames(sel_cv) = c("wmis_cv","wnon_cv","wspl_cv","pmis_cv","ptrunc_cv","pallsubs_cv")
-        sel_cv <- sel_cv[rowSums(sel_cv[,1:3]) !=0, ]
+        #sel_cv <- sel_cv[rowSums(sel_cv[,1:3]) !=0, ]
         sel_cv$qmis_cv = p.adjust(sel_cv$pmis_cv, method="BH")
         sel_cv$qtrunc_cv = p.adjust(sel_cv$ptrunc_cv, method="BH")
         sel_cv$qallsubs_cv = p.adjust(sel_cv$pallsubs_cv, method="BH")
