@@ -394,6 +394,9 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
         
         sel_loc = as.data.frame(t(sapply(1:nrow(genemuts), selfun_loc)))
         colnames(sel_loc) = c("wmis_loc","wnon_loc","wspl_loc","pmis_loc","pall_loc")
+        #sel_cv <- sel_cv[rowSums(sel_cv[,2:5]) !=0, ] # remove genes with no mutations (chromosome wise)
+        sel_loc <- sel_loc[rowSums(sel_loc[,2:5]) !=0, ]
+
         sel_loc$qmis_loc = p.adjust(sel_loc$pmis_loc, method="BH")
         sel_loc$qall_loc = p.adjust(sel_loc$pall_loc, method="BH")
         sel_loc = cbind(genemuts[,1:5],sel_loc)
@@ -503,6 +506,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
         
         sel_cv = as.data.frame(t(sapply(1:nrow(genemuts), selfun_cv)))
         colnames(sel_cv) = c("wmis_cv","wnon_cv","wspl_cv","pmis_cv","ptrunc_cv","pallsubs_cv")
+        sel_cv <- sel_cv[rowSums(sel_cv[,1:3]) !=0, ]
         sel_cv$qmis_cv = p.adjust(sel_cv$pmis_cv, method="BH")
         sel_cv$qtrunc_cv = p.adjust(sel_cv$ptrunc_cv, method="BH")
         sel_cv$qallsubs_cv = p.adjust(sel_cv$pallsubs_cv, method="BH")
