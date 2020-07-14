@@ -28,7 +28,7 @@
 #' @return - annotmuts: Annotated coding mutations.
 #' @return - genemuts: Observed and expected numbers of mutations per gene.
 #' @return - mle_submodel: MLEs of the substitution model.
-#' @return - exclsamples: Samples excluded from the analysis.
+#' @return - exclsamples: Samples excluded from the analysis.pc
 #' @return - exclmuts: Coding mutations excluded from the analysis.
 #' @return - nbreg: Negative binomial regression model for substitutions.
 #' @return - nbregind: Negative binomial regression model for indels.
@@ -388,7 +388,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
             llall = sum(dpois(x=x$N, lambda=x$L*mutrates*mrfold*t(array(c(1,w),dim=c(4,numrates))), log=T)) # loglik free wmis, wnon, wspl
             w[w>1e4] = 1e4
             
-            p = log(1-pchisq(2*(llall-c(llmis,ll0)),df=c(1,3)))
+            p = pchisq(2*(llall-c(llmis,ll0)),df=c(1,3), lower.tail=F, log.p=T)
             return(c(w,p))
         }
         
@@ -491,7 +491,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
           
             if (constrain_wnon_wspl == 0) {
             
-                p = log(1-pchisq(2*(llall_unc-c(llmis,lltrunc,ll0)),df=c(1,2,3)))
+                p = pchisq(2*(llall_unc-c(llmis,lltrunc,ll0)),df=c(1,2,3), lower.tail=F, log.p=T)
                 return(c(wfree,p))
                 
             } else { # d2. Free selection model: free wmis, free wnon==wspl
@@ -499,7 +499,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
                 wmisfree = y[2]/y[6]/mrfold; wmisfree[y[2]==0] = 0
                 wtruncfree = sum(y[3:4])/sum(y[7:8])/mrfold; wtruncfree[sum(y[3:4])==0] = 0
                 llall = sum(dpois(x=x$N, lambda=x$L*mutrates*mrfold*t(array(c(1,wmisfree,wtruncfree,wtruncfree),dim=c(4,numrates))), log=T)) + dgamma(opt_t, shape=shape, scale=scale, log=T) # loglik free wmis, free wnon==wspl
-                p = 1-pchisq(2*c(llall_unc-llmis,llall-c(lltrunc,ll0)),df=c(1,1,2))
+                p = pchisq(2*c(llall_unc-llmis,llall-c(lltrunc,ll0)),df=c(1,1,2), lower.tail=F, log.p=T)
                 return(c(wmisfree,wtruncfree,wtruncfree,p))
             }
         }
@@ -583,7 +583,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
             
             sel_cv = merge(sel_cv, geneindels, by="gene_name")[,c("gene_name","n_syn","n_mis","n_non","n_spl","n_indused","wmis_cv","wnon_cv","wspl_cv","wind","pmis_cv","ptrunc_cv","pallsubs_cv","pind","qmis_cv","qtrunc_cv","qallsubs_cv")]
             colnames(sel_cv) = c("gene_name","n_syn","n_mis","n_non","n_spl","n_ind","wmis_cv","wnon_cv","wspl_cv","wind_cv","pmis_cv","ptrunc_cv","pallsubs_cv","pind_cv","qmis_cv","qtrunc_cv","qallsubs_cv")
-            sel_cv$pglobal_cv = 1 - pchisq(-2 * (log(sel_cv$pallsubs_cv) + log(sel_cv$pind_cv)), df = 4)
+            sel_cv$pglobal_cv = pchisq(-2 * (log(sel_cv$pallsubs_cv) + log(sel_cv$pind_cv)), df = 4, lower.tail=F, log.p=T)
             sel_cv$qglobal_cv = p.adjust(sel_cv$pglobal, method="BH")
         
             sel_cv = sel_cv[order(sel_cv$pglobal_cv, sel_cv$pallsubs_cv, sel_cv$pmis_cv, sel_cv$ptrunc_cv, -sel_cv$wmis_cv),] # Sorting genes in the output file
