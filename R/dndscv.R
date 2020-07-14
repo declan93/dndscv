@@ -491,7 +491,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
           
             if (constrain_wnon_wspl == 0) {
             
-                p = pchisq(2*(llall_unc-c(llmis,lltrunc,ll0)),df=c(1,2,3), lower.tail=F)
+                p = 1- pchisq(2*(llall_unc-c(llmis,lltrunc,ll0)),df=c(1,2,3))
                 return(c(wfree,p))
                 
             } else { # d2. Free selection model: free wmis, free wnon==wspl
@@ -499,7 +499,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
                 wmisfree = y[2]/y[6]/mrfold; wmisfree[y[2]==0] = 0
                 wtruncfree = sum(y[3:4])/sum(y[7:8])/mrfold; wtruncfree[sum(y[3:4])==0] = 0
                 llall = sum(dpois(x=x$N, lambda=x$L*mutrates*mrfold*t(array(c(1,wmisfree,wtruncfree,wtruncfree),dim=c(4,numrates))), log=T)) + dgamma(opt_t, shape=shape, scale=scale, log=T) # loglik free wmis, free wnon==wspl
-                p = pchisq(2*c(llall_unc-llmis,llall-c(lltrunc,ll0)),df=c(1,1,2), lower.tail=F)
+                p = 1 - pchisq(2*c(llall_unc-llmis,llall-c(lltrunc,ll0)),df=c(1,1,2))
                 return(c(wmisfree,wtruncfree,wtruncfree,p))
             }
         }
