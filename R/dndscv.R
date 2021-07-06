@@ -259,7 +259,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
             RefCDS[[geneind]]$N[trisub,impind] = RefCDS[[geneind]]$N[trisub,impind] + 1 # Adding the mutation to the N matrices
         }
       
-        if (round(j/1e4)==(j/1e4)) { message(sprintf('    %0.3g%% ...  Ref size = %s', round(j/nrow(mutations),2)*100),object.size(RefCDS)) }
+        if (round(j/1e4)==(j/1e4)) { message(sprintf('    %0.3g%% ...  Ref size = %s', round(j/nrow(mutations),2)*100), object.size(RefCDS))) }
     }
     message(sprintf('mutations 1 %s\n', object.size(mutations)))
     mutations$ref3_cod = ref3_cod
