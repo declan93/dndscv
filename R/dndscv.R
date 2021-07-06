@@ -121,19 +121,21 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     
     ## 2. Mutation annotation
     message("[2] Annotating the mutations...")
-    
+    message(sprintf('line 124'))
     nt = c("A","C","G","T")
     trinucs = paste(rep(nt,each=16,times=1),rep(nt,each=4,times=4),rep(nt,each=1,times=16), sep="")
     trinucinds = setNames(1:64, trinucs)
     trinucsubs = NULL
+    message(sprintf('line 129'))
     for (j in 1:length(trinucs)) {
         trinucsubs = c(trinucsubs, paste(trinucs[j], paste(substr(trinucs[j],1,1), setdiff(nt,substr(trinucs[j],2,2)), substr(trinucs[j],3,3), sep=""), sep=">"))
     }
+     message(sprintf('line 133'))
     trinucsubsind = setNames(1:192, trinucsubs)
-    
+     message(sprintf('line 135'))
     ind = setNames(1:length(RefCDS), sapply(RefCDS,function(x) x$gene_name))
     gr_genes_ind = ind[gr_genes$names]
-    
+     message(sprintf('line 138'))
     # Warning about possible unannotated dinucleotide substitutions
     if (any(diff(mutations$pos)==1)) {
         warning("Mutations observed in contiguous sites within a sample. Please annotate or remove dinucleotide or complex substitutions for best results.")
@@ -143,13 +145,16 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     if (nrow(unique(mutations[,2:5])) < nrow(mutations)) {
         warning("Same mutations observed in different sampleIDs. Please verify that these are independent events and remove duplicates otherwise.")
     }
-    
+    message(sprintf('line 148'))
     # Start and end position of each mutation
     mutations$end = mutations$start = mutations$pos
+    message(sprintf('line 151'))
     l = nchar(mutations$ref)-1 # Deletions of multiple bases
     mutations$end = mutations$end + l
+    message(sprintf('line 154'))
     ind = substr(mutations$ref,1,1)==substr(mutations$mut,1,1) & nchar(mutations$ref)>nchar(mutations$mut) # Position correction for deletions annotated in the previous base (e.g. CA>C)
     mutations$start = mutations$start + ind
+    message(sprintf('line 157'))
     message(sprintf('0b mutations size %s\n', object.size(mutations)))
     # Mapping mutations to genes
     gr_muts = GenomicRanges::GRanges(mutations$chr, IRanges::IRanges(mutations$start,mutations$end))
@@ -158,7 +163,9 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     message(sprintf('ol df size %s\n', object.size(ol)))
     mutations = mutations[ol[,1],] # Duplicating subs if they hit more than one gene
     mutations$geneind = gr_genes_ind[ol[,2]]
+    message(sprintf('line 166'))
     mutations$gene = sapply(RefCDS,function(x) x$gene_name)[mutations$geneind]
+    message(sprintf('line 168'))
     mutations = unique(mutations)
     message(sprintf('0c mutations size %s\n', object.size(mutations)))
     # Optional: Excluding samples exceeding the limit of mutations/sample [see Default parameters]
@@ -169,7 +176,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
         exclsamples = names(nsampl[nsampl>max_coding_muts_per_sample])
         mutations = mutations[!(mutations$sampleID %in% names(nsampl[nsampl>max_coding_muts_per_sample])),]
     }
-    
+     message(sprintf('line 179'))
     # Optional: Limiting the number of mutations per gene per sample (to minimise the impact of unannotated kataegis and other mutation clusters) [see Default parameters]
     mutrank = ave(mutations$pos, paste(mutations$sampleID,mutations$gene), FUN = function(x) rank(x))
     exclmuts = NULL
@@ -183,6 +190,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     
     mutations$strand = sapply(RefCDS,function(x) x$strand)[mutations$geneind]
     snv = (mutations$ref %in% nt & mutations$mut %in% nt)
+    message(sprintf('line 193'))
     if (!any(snv)) { stop("Zero coding substitutions found in this dataset. Unable to run dndscv. Common causes for this error are inputting only indels or using chromosome names different to those in the reference database (e.g. chr1 vs 1)") }
     indels = mutations[!snv,]
     mutations = mutations[snv,]
@@ -192,11 +200,11 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     isminus = (mutations$strand==-1)
     mutations$ref_cod[isminus] = compnt[mutations$ref[isminus]]
     mutations$mut_cod[isminus] = compnt[mutations$mut[isminus]]
-    
+    message(sprintf('line 203')) 
     for (j in 1:length(RefCDS)) {
         RefCDS[[j]]$N = array(0, dim=c(192,4)) # Initialising the N matrices
     }
-    
+     message(sprintf('line 207'))
     # Subfunction: obtaining the codon positions of a coding mutation given the exon intervals
     
     chr2cds = function(pos,cds_int,strand) {
@@ -210,9 +218,8 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     # Annotating the functional impact of each substitution and populating the N matrices
     
     ref3_cod = mut3_cod = wrong_ref = aachange = ntchange = impact = codonsub = array(NA, nrow(mutations))
-    
+    message(sprintf('line 221')) 
     for (j in 1:nrow(mutations)) {
-    
         geneind = mutations$geneind[j]
         pos = mutations$pos[j]
         
@@ -260,7 +267,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
             RefCDS[[geneind]]$N[trisub,impind] = RefCDS[[geneind]]$N[trisub,impind] + 1 # Adding the mutation to the N matrices
         }
       
-        if (round(j/1e4)==(j/1e4)) { message(sprintf('    %0.3g%% ...  Ref size = %s', round(j/nrow(mutations),2)*100, object.size(RefCDS))) }
+        if (round(j/1e4)==(j/1e4)) { message(sprintf('    %0.3g%% ...  Ref size = %s  in mutations loop iter %s', round(j/nrow(mutations),2)*100, object.size(RefCDS), j)) }
     }
     message(sprintf('mutations 1 %s\n', object.size(mutations)))
     mutations$ref3_cod = ref3_cod
