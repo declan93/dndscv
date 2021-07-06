@@ -152,7 +152,9 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     
     # Mapping mutations to genes
     gr_muts = GenomicRanges::GRanges(mutations$chr, IRanges::IRanges(mutations$start,mutations$end))
+    message(sprintf('gr_muts size %s\n', object.size(gr_muts)))                                        
     ol = as.data.frame(GenomicRanges::findOverlaps(gr_muts, gr_genes, type="any", select="all"))
+    message(sprintf('ol df size %s\n', object.size(ol)))
     mutations = mutations[ol[,1],] # Duplicating subs if they hit more than one gene
     mutations$geneind = gr_genes_ind[ol[,2]]
     mutations$gene = sapply(RefCDS,function(x) x$gene_name)[mutations$geneind]
@@ -259,7 +261,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
       
         if (round(j/1e4)==(j/1e4)) { message(sprintf('    %0.3g%% ...', round(j/nrow(mutations),2)*100)) }
     }
-    
+    message(sprintf('mutations 1 %s\n', object.size(mutations)))
     mutations$ref3_cod = ref3_cod
     mutations$mut3_cod = mut3_cod
     mutations$aachange = aachange
@@ -267,6 +269,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     mutations$codonsub = codonsub
     mutations$impact = impact
     mutations$pid = sapply(RefCDS,function(x) x$protein_id)[mutations$geneind]
+    message(sprintf('mutations 2 %s\n', object.size(mutations)))
     
     if (any(!is.na(wrong_ref))) {
         if (mean(!is.na(wrong_ref)) < 0.1) { # If fewer than 10% of mutations have a wrong reference base, we warn the user
@@ -309,7 +312,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
         annot = mutations
     }
     annot = annot[order(annot$sampleID, annot$chr, annot$pos),]
-    
+    message(sprintf('annot %s\n', object.size(annot)))
     
     ## 3. Estimation of the global rate and selection parameters
     message("[3] Estimating global rates...")
