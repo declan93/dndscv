@@ -47,7 +47,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     mutations[[3]] = as.numeric(mutations[[3]]) # Chromosome position as numeric
     mutations = mutations[mutations[,4]!=mutations[,5],] # Removing mutations with identical reference and mutant base
     colnames(mutations) = c("sampleID","chr","pos","ref","mut")
-    
+    message(sprintf('0 mutations size %s\n', object.size(mutations)))
     # Removing NA entries from the input mutation table
     indna = which(is.na(mutations),arr.ind=T)
     if (nrow(indna)>0) {
@@ -106,6 +106,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     }
     
     # Expanding the reference sequences [for faster access]
+    message(sprintf('RefCDS length %s\n', length(RefCDS)))                  
     for (j in 1:length(RefCDS)) {
         RefCDS[[j]]$seq_cds = base::strsplit(as.character(RefCDS[[j]]$seq_cds), split="")[[1]]
         RefCDS[[j]]$seq_cds1up = base::strsplit(as.character(RefCDS[[j]]$seq_cds1up), split="")[[1]]
@@ -149,7 +150,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     mutations$end = mutations$end + l
     ind = substr(mutations$ref,1,1)==substr(mutations$mut,1,1) & nchar(mutations$ref)>nchar(mutations$mut) # Position correction for deletions annotated in the previous base (e.g. CA>C)
     mutations$start = mutations$start + ind
-    
+    message(sprintf('0b mutations size %s\n', object.size(mutations)))
     # Mapping mutations to genes
     gr_muts = GenomicRanges::GRanges(mutations$chr, IRanges::IRanges(mutations$start,mutations$end))
     message(sprintf('gr_muts size %s\n', object.size(gr_muts)))                                        
@@ -159,7 +160,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     mutations$geneind = gr_genes_ind[ol[,2]]
     mutations$gene = sapply(RefCDS,function(x) x$gene_name)[mutations$geneind]
     mutations = unique(mutations)
-    
+    message(sprintf('0c mutations size %s\n', object.size(mutations)))
     # Optional: Excluding samples exceeding the limit of mutations/sample [see Default parameters]
     nsampl = sort(table(mutations$sampleID))
     exclsamples = NULL
