@@ -106,19 +106,26 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
     trinucs = paste(rep(nt,each=16,times=1),rep(nt,each=4,times=4),rep(nt,each=1,times=16), sep="")
     trinucinds = setNames(1:64, trinucs)
     trinucsubs = NULL
-    message(sprintf('line 129'))
+    message(sprintf('line 109'))
     for (j in 1:length(trinucs)) {
         trinucsubs = c(trinucsubs, paste(trinucs[j], paste(substr(trinucs[j],1,1), setdiff(nt,substr(trinucs[j],2,2)), substr(trinucs[j],3,3), sep=""), sep=">"))
     }
-    message(sprintf('line 133'))
+    message('line 113')
     trinucsubsind = setNames(1:192, trinucsubs)
      message(sprintf('line 135'))
     ind = setNames(1:length(RefCDS), sapply(RefCDS,function(x) x$gene_name))
     gr_genes_ind = ind[gr_genes$names]
     message(sprintf('line 138'))
-    
+         #init N matrices
+    for (j in 1:length(RefCDS)) {
+        RefCDS[[j]]$N = array(0, dim=c(192,4)) # Initialising the N matrices
+    }
+                                            
+                                            
+    # LOOP OVER INPUT FILES                                        
     files <- list.files(path=mut_path, pattern="*.txt", full.names=TRUE, recursive=FALSE)
     for(fi in files){
+       message(sprintf('Reading input %s',fi))
         mutations = fread(fi,header=F)
     ## 1. Environment
     message("[1] Loading the environment...")
@@ -134,16 +141,11 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
         warning(sprintf("%0.0f rows in the input table contained NA entries and have been removed. Please investigate.",length(unique(indna[,1]))))
     }
     
-        #init N matrices
-    for (j in 1:length(RefCDS)) {
-        RefCDS[[j]]$N = array(0, dim=c(192,4)) # Initialising the N matrices
-    }
- 
     
     
     ## 2. Mutation annotation
     message("[2] Annotating the mutations...")
-    message(sprintf('line 124'))
+    message(sprintf('line 147'))
 
     # Warning about possible unannotated dinucleotide substitutions
     if (any(diff(mutations$pos)==1)) {
@@ -154,16 +156,16 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
     if (nrow(unique(mutations[,2:5])) < nrow(mutations)) {
         warning("Same mutations observed in different sampleIDs. Please verify that these are independent events and remove duplicates otherwise.")
     }
-    message(sprintf('line 148'))
+    message(sprintf('line 158'))
     # Start and end position of each mutation
     mutations$end = mutations$start = mutations$pos
-    message(sprintf('line 151'))
+    message(sprintf('line 161'))
     l = nchar(mutations$ref)-1 # Deletions of multiple bases
     mutations$end = mutations$end + l
-    message(sprintf('line 154'))
+    message(sprintf('line 164'))
     ind = substr(mutations$ref,1,1)==substr(mutations$mut,1,1) & nchar(mutations$ref)>nchar(mutations$mut) # Position correction for deletions annotated in the previous base (e.g. CA>C)
     mutations$start = mutations$start + ind
-    message(sprintf('line 157'))
+    message(sprintf('line 167'))
     message(sprintf('0b mutations size %s\n', object.size(mutations)))
     # Mapping mutations to genes
     gr_muts = GenomicRanges::GRanges(mutations$chr, IRanges::IRanges(mutations$start,mutations$end))
@@ -172,9 +174,9 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
     message(sprintf('ol df size %s\n', object.size(ol)))
     mutations = mutations[ol[,1],] # Duplicating subs if they hit more than one gene
     mutations$geneind = gr_genes_ind[ol[,2]]
-    message(sprintf('line 166'))
+    message(sprintf('line 176'))
     mutations$gene = sapply(RefCDS,function(x) x$gene_name)[mutations$geneind]
-    message(sprintf('line 168'))
+    message(sprintf('line 178'))
     mutations = unique(mutations)
     message(sprintf('0c mutations size %s\n', object.size(mutations)))
     # Optional: Excluding samples exceeding the limit of mutations/sample [see Default parameters]
@@ -185,7 +187,7 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
         exclsamples = names(nsampl[nsampl>max_coding_muts_per_sample])
         mutations = mutations[!(mutations$sampleID %in% names(nsampl[nsampl>max_coding_muts_per_sample])),]
     }
-     message(sprintf('line 179'))
+     message(sprintf('line 189'))
     # Optional: Limiting the number of mutations per gene per sample (to minimise the impact of unannotated kataegis and other mutation clusters) [see Default parameters]
     mutrank = ave(mutations$pos, paste(mutations$sampleID,mutations$gene), FUN = function(x) rank(x))
     exclmuts = NULL
@@ -199,7 +201,7 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
     
     mutations$strand = sapply(RefCDS,function(x) x$strand)[mutations$geneind]
     snv = (mutations$ref %in% nt & mutations$mut %in% nt)
-    message(sprintf('line 193'))
+    message(sprintf('line 203'))
     if (!any(snv)) { stop("Zero coding substitutions found in this dataset. Unable to run dndscv. Common causes for this error are inputting only indels or using chromosome names different to those in the reference database (e.g. chr1 vs 1)") }
     indels = mutations[!snv,]
     mutations = mutations[snv,]
@@ -209,9 +211,9 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
     isminus = (mutations$strand==-1)
     mutations$ref_cod[isminus] = compnt[mutations$ref[isminus]]
     mutations$mut_cod[isminus] = compnt[mutations$mut[isminus]]
-    message(sprintf('line 203')) 
+    message(sprintf('line 213')) 
     
-     message(sprintf('line 207'))
+     message(sprintf('line 215'))
     # Subfunction: obtaining the codon positions of a coding mutation given the exon intervals
     
     chr2cds = function(pos,cds_int,strand) {
@@ -225,7 +227,7 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
     # Annotating the functional impact of each substitution and populating the N matrices
     
     ref3_cod = mut3_cod = wrong_ref = aachange = ntchange = impact = codonsub = array(NA, nrow(mutations))
-    message(sprintf('line 221')) 
+    message(sprintf('line 229')) 
     for (j in 1:nrow(mutations)) {
         geneind = mutations$geneind[j]
         pos = mutations$pos[j]
@@ -327,7 +329,7 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
         annot = mutations
     }
     annot = annot[order(annot$sampleID, annot$chr, annot$pos),]
-    write.table(paste(fi,".annot", sep=""), row.names=F,quotes=F)
+    write.table(paste(fi,".annot", sep=""), row.names=F,quote=F)
     } # end file loop
     
     message(sprintf('annot %s\n RefCDS= %s', object.size(annot), object.size(RefCDS)))
