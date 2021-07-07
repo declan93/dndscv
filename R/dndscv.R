@@ -41,13 +41,14 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
 
     ## 1. Environment
     message("[1] Loading the environment...")
-
+    message(sprintf('mutations type %s\n', class(mutations)))
     mutations = mutations[,1:5] # Restricting input matrix to first 5 columns
     mutations[,c(1,2,3,4,5)] = lapply(mutations[,c(1,2,3,4,5)], as.character) # Factors to character
     mutations[[3]] = as.numeric(mutations[[3]]) # Chromosome position as numeric
     mutations = mutations[mutations[,4]!=mutations[,5],] # Removing mutations with identical reference and mutant base
     colnames(mutations) = c("sampleID","chr","pos","ref","mut")
     message(sprintf('0 mutations size %s\n', object.size(mutations)))
+    message(sprintf('mutations type %s\n', class(mutations)))
     # Removing NA entries from the input mutation table
     indna = which(is.na(mutations),arr.ind=T)
     if (nrow(indna)>0) {
@@ -137,9 +138,9 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     gr_genes_ind = ind[gr_genes$names]
      message(sprintf('line 138'))
     # Warning about possible unannotated dinucleotide substitutions
-    if (any(diff(mutations$pos)==1)) {
-        warning("Mutations observed in contiguous sites within a sample. Please annotate or remove dinucleotide or complex substitutions for best results.")
-    }
+   # if (any(diff(mutations$pos)==1)) {
+    #    warning("Mutations observed in contiguous sites within a sample. Please annotate or remove dinucleotide or complex substitutions for best results.")
+    #}
     
     # Warning about multiple instances of the same mutation in different sampleIDs
     if (nrow(unique(mutations[,2:5])) < nrow(mutations)) {
