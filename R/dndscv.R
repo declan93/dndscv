@@ -37,27 +37,9 @@
 #' 
 #' @export
 
-dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc = "cgc81", cv = "hg19", max_muts_per_gene_per_sample = 3, max_coding_muts_per_sample = 3000, use_indel_sites = T, min_indels = 5, maxcovs = 20, constrain_wnon_wspl = T, outp = 3, numcode = 1, outmats = F) {
-
-    ## 1. Environment
-    message("[1] Loading the environment...")
-    message(sprintf('mutations type %s\n', class(mutations)))
-    mutations = mutations[,1:5] # Restricting input matrix to first 5 columns
-    mutations[,c(1,2,3,4,5)] = lapply(mutations[,c(1,2,3,4,5)], as.character) # Factors to character
-    mutations[[3]] = as.numeric(mutations[[3]]) # Chromosome position as numeric
-    mutations = mutations[mutations[,4]!=mutations[,5],] # Removing mutations with identical reference and mutant base
-    colnames(mutations) = c("sampleID","chr","pos","ref","mut")
-    message(sprintf('0 mutations size %s\n', object.size(mutations)))
-    message(sprintf('mutations type %s\n', class(mutations)))
-    # Removing NA entries from the input mutation table
-    indna = which(is.na(mutations),arr.ind=T)
-    if (nrow(indna)>0) {
-        mutations = mutations[-unique(indna[,1]),] # Removing entries with an NA in any row
-        warning(sprintf("%0.0f rows in the input table contained NA entries and have been removed. Please investigate.",length(unique(indna[,1]))))
-    }
-    
-    # [Input] Reference database
-    refdb_class = class(refdb)
+dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc = "cgc81", cv = "hg19", max_muts_per_gene_per_sample = 3, max_coding_muts_per_sample = 3000, use_indel_sites = T, min_indels = 5, maxcovs = 20, constrain_wnon_wspl = T, outp = 3, numcode = 1, outmats = F) {
+   #set up 
+       refdb_class = class(refdb)
     if ("character" %in% refdb_class) {
         if (refdb == "hg19") {
             data("refcds_hg19", package="dndscv")
@@ -119,10 +101,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
         }
     }
     
-    
-    ## 2. Mutation annotation
-    message("[2] Annotating the mutations...")
-    message(sprintf('line 124'))
+                      
     nt = c("A","C","G","T")
     trinucs = paste(rep(nt,each=16,times=1),rep(nt,each=4,times=4),rep(nt,each=1,times=16), sep="")
     trinucinds = setNames(1:64, trinucs)
@@ -131,16 +110,45 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     for (j in 1:length(trinucs)) {
         trinucsubs = c(trinucsubs, paste(trinucs[j], paste(substr(trinucs[j],1,1), setdiff(nt,substr(trinucs[j],2,2)), substr(trinucs[j],3,3), sep=""), sep=">"))
     }
-     message(sprintf('line 133'))
+    message(sprintf('line 133'))
     trinucsubsind = setNames(1:192, trinucsubs)
      message(sprintf('line 135'))
     ind = setNames(1:length(RefCDS), sapply(RefCDS,function(x) x$gene_name))
     gr_genes_ind = ind[gr_genes$names]
-     message(sprintf('line 138'))
+    message(sprintf('line 138'))
+    
+    files <- list.files(path=mut_path, pattern="*.txt", full.names=TRUE, recursive=FALSE)
+    for(fi in files){
+        mutations = fread(fi,header=F)
+    ## 1. Environment
+    message("[1] Loading the environment...")
+    mutations = mutations[,1:5] # Restricting input matrix to first 5 columns
+    mutations[,c(1,2,3,4,5)] = lapply(mutations[,c(1,2,3,4,5)], as.character) # Factors to character
+    mutations[[3]] = as.numeric(mutations[[3]]) # Chromosome position as numeric
+    mutations = mutations[mutations[,4]!=mutations[,5],] # Removing mutations with identical reference and mutant base
+    colnames(mutations) = c("sampleID","chr","pos","ref","mut")
+    # Removing NA entries from the input mutation table
+    indna = which(is.na(mutations),arr.ind=T)
+    if (nrow(indna)>0) {
+        mutations = mutations[-unique(indna[,1]),] # Removing entries with an NA in any row
+        warning(sprintf("%0.0f rows in the input table contained NA entries and have been removed. Please investigate.",length(unique(indna[,1]))))
+    }
+    
+        #init N matrices
+    for (j in 1:length(RefCDS)) {
+        RefCDS[[j]]$N = array(0, dim=c(192,4)) # Initialising the N matrices
+    }
+ 
+    
+    
+    ## 2. Mutation annotation
+    message("[2] Annotating the mutations...")
+    message(sprintf('line 124'))
+
     # Warning about possible unannotated dinucleotide substitutions
-   # if (any(diff(mutations$pos)==1)) {
-    #    warning("Mutations observed in contiguous sites within a sample. Please annotate or remove dinucleotide or complex substitutions for best results.")
-    #}
+    if (any(diff(mutations$pos)==1)) {
+        warning("Mutations observed in contiguous sites within a sample. Please annotate or remove dinucleotide or complex substitutions for best results.")
+    }
     
     # Warning about multiple instances of the same mutation in different sampleIDs
     if (nrow(unique(mutations[,2:5])) < nrow(mutations)) {
@@ -202,9 +210,7 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
     mutations$ref_cod[isminus] = compnt[mutations$ref[isminus]]
     mutations$mut_cod[isminus] = compnt[mutations$mut[isminus]]
     message(sprintf('line 203')) 
-    for (j in 1:length(RefCDS)) {
-        RefCDS[[j]]$N = array(0, dim=c(192,4)) # Initialising the N matrices
-    }
+    
      message(sprintf('line 207'))
     # Subfunction: obtaining the codon positions of a coding mutation given the exon intervals
     
@@ -321,6 +327,9 @@ dndscv = function(mutations, gene_list = NULL, refdb = "hg19", sm = "192r_3w", k
         annot = mutations
     }
     annot = annot[order(annot$sampleID, annot$chr, annot$pos),]
+    write.table(paste(fi,".annot", sep=""), row.names=F,quotes=F)
+    } # end file loop
+    
     message(sprintf('annot %s\n RefCDS= %s', object.size(annot), object.size(RefCDS)))
     
     ## 3. Estimation of the global rate and selection parameters
