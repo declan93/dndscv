@@ -329,6 +329,7 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
         annot = mutations
     }
     annot = annot[order(annot$sampleID, annot$chr, annot$pos),]
+    message(sprintf('writing %s', paste(fi,".annot", sep="") ))
     write.table(paste(fi,".annot", sep=""), row.names=F,quote=F)
     } # end file loop
     
