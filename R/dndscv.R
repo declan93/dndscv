@@ -174,7 +174,7 @@ dndscv = function(mut_path, gene_list = NULL, refdb = "hg19", sm = "192r_3w", kc
     message(sprintf('ol df size %s\n', object.size(ol)))
     mutations = mutations[ol[,1],] # Duplicating subs if they hit more than one gene
     mutations$geneind = gr_genes_ind[ol[,2]]
-    message(sprintf('line 176'))
+    message(sprintf('line 177'))
     mutations$gene = sapply(RefCDS,function(x) x$gene_name)[mutations$geneind]
     message(sprintf('line 178'))
     mutations = unique(mutations)
